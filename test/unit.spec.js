@@ -9,6 +9,26 @@ describe('unit', function() {
         expect(typeof $invoke).toBe('function');
     });
 
+    it('clone', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(test0) { callCount++; args = arguments; };
+
+        $invokeTestInstance.inject('test0', 0);
+        var $clonedInvokeTestInstance = $invokeTestInstance.clone();
+
+        $clonedInvokeTestInstance.inject('test0', 1);
+        $invokeTestInstance(test);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe(0);
+
+        $clonedInvokeTestInstance(test);
+        expect(callCount).toBe(2);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe(1);
+    });
+
     it('invoke without arguments', function() {
         var callCount = 0;
         var args = null;
