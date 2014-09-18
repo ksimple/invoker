@@ -1,16 +1,27 @@
 Dependency injection - Invoker
 ===
+Build
+---
+```
+npm install
+grunt debug
+grunt test
+```
+Examples
+---
 - Inject a constant value  
 ```
-$inovke.inject('test', 'Hello, world');
+$invoke.inject('test', 'Hello, world');
 var func = function(test) {
   console.log(test);
 };
-$inovke(func);
+// or $invoke(['test', func]);
+// or $invoke('test', func);
+$invoke(func);
 ```
 - Inject a constant value in async mode  
 ```
-$inovke.inject('test', 'Hello, world');
+$invoke.inject('test', 'Hello, world');
 var func = function(test, $done) {
   console.log(test);
   setTimeout(
@@ -19,19 +30,26 @@ var func = function(test, $done) {
     },
     1000);
 };
-$inovke(func);
+$invoke(func);
 ```
 - Inject a factory
 ```
-$inovke.injectFactory('test', function() { return 'Hello, world'; });
+$invoke.inject('factoryDependency', 'depend');
+$invoke.injectFactory(
+  'test',
+  // or ['factoryDependency', function (dep) { console.log(dep); }]
+  function(factoryDependency) {
+    console.log(factoryDependency)
+    return 'Hello, world';
+  });
 var func = function(test) {
   console.log(test);
 };
-$inovke(func);
+$invoke(func);
 ```
 - Inject an async factory
 ```
-$inovke.injectFactory(
+$invoke.injectFactory(
   'test',
   function($done) {
     setTimeout(function() {
@@ -43,11 +61,11 @@ $inovke.injectFactory(
 var func = function(test) {
   console.log(test);
 };
-$inovke(func);
+$invoke(func);
 ```
 - Do something after the method is invoked
 ```
-$inovke.inject('test', 'Hello, world');
+$invoke.inject('test', 'Hello, world');
 var func = function(test, $done) {
   console.log(test);
   setTimeout(
@@ -56,7 +74,7 @@ var func = function(test, $done) {
     },
     1000);
 };
-$inovke(func)
+$invoke(func)
   .done(function (result) {
     // result is 'done'
     console.log(result);
