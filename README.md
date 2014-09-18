@@ -65,15 +65,18 @@ $invoke(func);
 ```
 - Do something after the method is invoked
 ```
-$invoke.inject('test', 'Hello, world');
-var func = function(test, $done) {
-  console.log(test);
-  setTimeout(
-    function () {
+var func = function(test) {
+  return test;
+};
+$invoke.injectFactory(
+  'test',
+  function($done) {
+    setTimeout(function() {
       $done('done');
     },
     1000);
-};
+  }
+);
 $invoke(func)
   .done(function (result) {
     // result is 'done'
