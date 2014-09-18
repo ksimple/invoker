@@ -1,6 +1,6 @@
 Dependency injection - Invoker
 ===
-1. Inject a constant value  
+- Inject a constant value  
 ```
 $inovke.inject('test', 'Hello, world');
 var func = function(test) {
@@ -8,7 +8,7 @@ var func = function(test) {
 };
 $inovke(func);
 ```
-2. Inject a constant value in async mode  
+- Inject a constant value in async mode  
 ```
 $inovke.inject('test', 'Hello, world');
 var func = function(test, $done) {
@@ -21,7 +21,7 @@ var func = function(test, $done) {
 };
 $inovke(func);
 ```
-3. Inject a factory
+- Inject a factory
 ```
 $inovke.injectFactory('test', function() { return 'Hello, world'; });
 var func = function(test) {
@@ -29,7 +29,7 @@ var func = function(test) {
 };
 $inovke(func);
 ```
-4. Inject an async factory
+- Inject an async factory
 ```
 $inovke.injectFactory(
   'test',
@@ -45,7 +45,7 @@ var func = function(test) {
 };
 $inovke(func);
 ```
-5. Do something after the method is invoked
+- Do something after the method is invoked
 ```
 $inovke.inject('test', 'Hello, world');
 var func = function(test, $done) {
@@ -57,7 +57,8 @@ var func = function(test, $done) {
     1000);
 };
 $inovke(func)
-  .done(function () {
-    console.log('done');
+  .done(function (result) {
+    // result is 'done'
+    console.log(result);
   });
 ```
