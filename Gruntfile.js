@@ -27,10 +27,10 @@
         watch: {
             ts: {
                 files: ['<%= ts.debug.src %>'],
-                tasks: ['ts:debug']
+                tasks: ['ts:debug', 'jasmine:debug']
             },
             test: {
-                files: ['<%= jasmine.debug.options.specs %>', '<%= jasmine.debug.src %>'],
+                files: ['<%= jasmine.debug.options.specs %>'],
                 tasks: ['jasmine:debug'],
             },
         },
