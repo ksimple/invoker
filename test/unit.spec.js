@@ -6,7 +6,19 @@ describe('unit', function() {
     });
 
     it('create', function() {
-        expect(typeof $invoke).toBe('function');
+        var $invokeTestInstance = $invoke.create();
+        var callCount = 0;
+        var args = null;
+        var test = function(test0, test1) { callCount++; args = arguments; };
+
+        $invokeTestInstance.inject('test0', 0);
+        $invokeTestInstance.inject('test1', 1);
+        $invokeTestInstance.inject('test2', 2);
+        $invokeTestInstance(test);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(2);
+        expect(args[0]).toBe(0);
+        expect(args[1]).toBe(1);
     });
 
     it('return value', function() {

@@ -109,21 +109,21 @@ var $invoke = (function() {
                         continue;
                     }
 
-                    $invoke.resolve(name).done(createFacotryInvokerCallback(setArgs, index));
+                    resolve(name).done(createFacotryInvokerCallback(setArgs, index));
                 }
             }
         }
 
-        $invoke.resolve = function $invoke$resolve(name) {
-            if (typeof injection[name] === 'undefined' && parent) {
-                return parent.resolve(name);
-            }
-
+        function resolve(name) {
             var oneInjection = injection[name];
             var result = new resultSender();
 
             if (typeof oneInjection === 'undefined') {
-                result.setResult(undefined);
+                if (parent) {
+                    parent([name, (r) => result.setResult(r)]);
+                } else {
+                    result.setResult(undefined);
+                }
             } else if (oneInjection.type === 'raw') {
                 result.setResult(oneInjection.rawValue);
             } else if (oneInjection.type === 'factory') {
@@ -133,7 +133,7 @@ var $invoke = (function() {
             }
 
             return result;
-        };
+        }
 
         $invoke.injectFactory = function $invoke$injectFactory(name, value) {
             if (typeof value === 'function') {
@@ -190,6 +190,13 @@ var $invoke = (function() {
             instance.config(config);
             return instance;
         };
+
+        $invoke.create = function $invoke$inherit() {
+            var instance = createInvoke();
+
+            return instance;
+        };
+
 
         return $invoke;
     }
