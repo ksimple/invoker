@@ -29,10 +29,31 @@ var $invoke = (function() {
         };
     }
 
-    function createInvoke() {
+    function createInvoke(parent = null) {
         var injection = {};
         var config = {};
         var factoryInvoker = null;
+
+        var $invoke: any = function $invoke(...args) {
+            if (args.length == 0) {
+                return;
+            }
+
+            args = Array.prototype.slice.apply(arguments);
+            var func = args.pop();
+
+            if (typeof func === 'function' && args.length === 0) {
+                args = getArgNames(func);
+            } else if (typeof func === 'object' && func instanceof Array) {
+                args = func;
+                func = args.pop();
+            }
+
+            var result = new resultSender();
+
+            invokeInternal(args, func, result);
+            return result;
+        };
 
         function getArgNames(func) {
             var functionDefiniation = /^\s*function.*?\((.*?)\)/.exec(func.toString());
@@ -88,46 +109,29 @@ var $invoke = (function() {
                         continue;
                     }
 
-                    var oneInjection = injection[name];
-
-                    if (!oneInjection) {
-                        setArgs(index, undefined);
-                    } else if (oneInjection.type === 'raw') {
-                        setArgs(index, oneInjection.rawValue);
-                        continue;
-                    } else if (oneInjection.type === 'factory') {
-                        if (!factoryInvoker) {
-                            factoryInvoker = createInvoke();
-
-                            factoryInvoker.inject('$invoke', $invoke);
-                        }
-
-                        factoryInvoker(oneInjection.factory).done(createFacotryInvokerCallback(setArgs, index));
-                    } else {
-                        throw "Not recongnized injection type";
-                    }
+                    $invoke.resolve(name).done(createFacotryInvokerCallback(setArgs, index));
                 }
             }
         }
 
-        $invoke = function $invoke(...args) {
-            if (args.length == 0) {
-                return;
+        $invoke.resolve = function $invoke$resolve(name) {
+            if (typeof injection[name] === 'undefined' && parent) {
+                return parent.resolve(name);
             }
 
-            args = Array.prototype.slice.apply(arguments);
-            var func = args.pop();
-
-            if (typeof func === 'function' && args.length === 0) {
-                args = getArgNames(func);
-            } else if (typeof func === 'object' && func instanceof Array) {
-                args = func;
-                func = args.pop();
-            }
-
+            var oneInjection = injection[name];
             var result = new resultSender();
 
-            invokeInternal(args, func, result);
+            if (typeof oneInjection === 'undefined') {
+                result.setResult(undefined);
+            } else if (oneInjection.type === 'raw') {
+                result.setResult(oneInjection.rawValue);
+            } else if (oneInjection.type === 'factory') {
+                $invoke(oneInjection.factory).done((r) => result.setResult(r));
+            } else {
+                throw "Not recongnized injection type";
+            }
+
             return result;
         };
 
@@ -156,14 +160,24 @@ var $invoke = (function() {
             };
         };
 
+        $invoke.clearInject = function $invoke$clearInject(name) {
+            delete injection[name];
+        };
+
         $invoke.config = function $invoke$config(newConfig) {
             for (var i in newConfig) {
                 config[i] = newConfig[i];
             }
         };
 
+        $invoke.inherit = function $invoke$inherit() {
+            var instance = createInvoke(this);
+
+            return instance;
+        };
+
         $invoke.clone = function $invoke$clone() {
-            var instance = createInvoke();
+            var instance = createInvoke(parent);
 
             for (var i in injection) {
                 if (injection[i].type === 'raw') {

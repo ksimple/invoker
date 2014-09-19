@@ -37,7 +37,9 @@
     });
 
     grunt.registerTask('debug', ['ts:debug']);
+    grunt.registerTask('build', ['debug']);
     grunt.registerTask('test', ['jasmine:debug']);
+    grunt.registerTask('all', ['build', 'test']);
 
     // Default task(s).
     grunt.registerTask('default', 'No default task', function() {

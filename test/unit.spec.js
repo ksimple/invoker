@@ -9,6 +9,17 @@ describe('unit', function() {
         expect(typeof $invoke).toBe('function');
     });
 
+    it('return value', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function() { callCount++; args = arguments; return 'done'; };
+
+        $invokeTestInstance(test).done(function (result) {
+            expect(callCount).toBe(1);
+            expect(result).toBe('done');
+        });
+    });
+
     it('clone', function() {
         var callCount = 0;
         var args = null;
@@ -18,6 +29,7 @@ describe('unit', function() {
         var $clonedInvokeTestInstance = $invokeTestInstance.clone();
 
         $clonedInvokeTestInstance.inject('test0', 1);
+
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(1);
@@ -27,6 +39,44 @@ describe('unit', function() {
         expect(callCount).toBe(2);
         expect(args.length).toBe(1);
         expect(args[0]).toBe(1);
+    });
+
+    it('clear injection', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(test0, test1) { callCount++; args = arguments; };
+
+        $invokeTestInstance.inject('test0', 0);
+        $invokeTestInstance.inject('test1', 1);
+        $invokeTestInstance.inject('test2', 2);
+        $invokeTestInstance.clearInject('test0');
+        $invokeTestInstance(test);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(2);
+        expect(args[0]).toBe(undefined);
+        expect(args[1]).toBe(1);
+    });
+
+    it('inject parent', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(test0, test1) { callCount++; args = arguments; };
+        var $inheritedInvokeTestInstance = $invokeTestInstance.inherit();
+
+        $invokeTestInstance.inject('test0', 0);
+        $inheritedInvokeTestInstance.inject('test1', 1);
+
+        $invokeTestInstance(test);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(2);
+        expect(args[0]).toBe(0);
+        expect(args[1]).toBe(undefined);
+
+        $inheritedInvokeTestInstance(test);
+        expect(callCount).toBe(2);
+        expect(args.length).toBe(2);
+        expect(args[0]).toBe(0);
+        expect(args[1]).toBe(1);
     });
 
     it('invoke without arguments', function() {
@@ -125,7 +175,7 @@ describe('unit', function() {
         var args = null;
         var factoryCallCount = 0;
         var test = function(test0, test1) { callCount++; args = arguments; };
-        var factory0 = function($done) { factoryCallCount = true; setTimeout(function () { $done(0); }, 2000); };
+        var factory0 = function($done) { factoryCallCount = true; setTimeout(function () { $done(0); }, 1); };
         var factory1 = function() { factoryCallCount++; return 1; };
         var factory2 = function() { factoryCallCount++; return 2; };
 
