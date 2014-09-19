@@ -20,8 +20,15 @@ var $invoke = (function() {
         };
 
         this.setResult = function (newResult) {
-            if (callback) {
-                callback(newResult);
+            if (resultReceived) {
+                throw "setResult can't be call twice";
+            }
+
+            if (doneCalled) {
+                if (callback) {
+                    callback(newResult);
+                }
+                resultReceived = true;
             } else {
                 result = newResult;
                 resultReceived = true;
