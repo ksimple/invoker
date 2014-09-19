@@ -106,16 +106,6 @@ var $invoke = (function() {
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
 
-                    if (name === '$done') {
-                        if (async) {
-                            throw "Can't set two $done in arguments";
-                        }
-
-                        async = true;
-                        setArgs(index, (result) => resultSender.setResult(result));
-                        continue;
-                    }
-
                     resolve(name).done(createFacotryInvokerCallback(setArgs, index));
                 }
             }
@@ -134,7 +124,17 @@ var $invoke = (function() {
             } else if (oneInjection.type === 'raw') {
                 result.setResult(oneInjection.rawValue);
             } else if (oneInjection.type === 'factory') {
-                $invoke(oneInjection.factory).done((r) => result.setResult(r));
+                if (!factoryInvoker) {
+                    factoryInvoker = $invoke.inherit();
+                }
+
+                factoryInvoker.inject('$done', (r) => result.setResult(r));
+
+                if (oneInjection.isAsync) {
+                    factoryInvoker(oneInjection.factory);
+                } else {
+                    factoryInvoker(oneInjection.factory).done((r) => result.setResult(r));
+                }
             } else {
                 throw "Not recongnized injection type";
             }
@@ -143,21 +143,23 @@ var $invoke = (function() {
         }
 
         $invoke.injectFactory = function $invoke$injectFactory(name, value) {
+            var factory, isAsync;
+
             if (typeof value === 'function') {
-                var factory = getArgNames(value);
+                factory = getArgNames(value);
 
                 factory.push(value);
-
-                injection[name] = {
-                    type: 'factory',
-                    factory: factory,
-                };
             } else if (typeof value === 'object' && value instanceof Array) {
-                injection[name] = {
-                    type: 'factory',
-                    factory: value,
-                };
+                factory = value;
             }
+
+            isAsync = factory.indexOf('$done') > 0;
+
+            injection[name] = {
+                type: 'factory',
+                isAsync: factory.indexOf('$done') >= 0,
+                factory: factory,
+            };
         };
 
         $invoke.inject = function $invoke$inject(name, value) {
