@@ -5,20 +5,37 @@ describe('unit', function() {
         $invokeTestInstance = $invoke.clone();
     });
 
+    function injectRawSequence(invoker, namePrefix, valuePrefix, count) {
+        for (var i = 0; i < count; i++) {
+            invoker.inject(namePrefix + i, valuePrefix + i);
+        }
+    }
+
+    function injectFactorySequence(invoker, namePrefix, valuePrefix, count, callback) {
+        function createCallaback(i) {
+            return function () {
+                callback();
+                return valuePrefix + i;
+            };
+        };
+        for (var i = 0; i < count; i++) {
+            invoker.injectFactory(namePrefix + i, createCallaback(i));
+        }
+    }
+
     it('create', function() {
         var $invokeTestInstance = $invoke.create();
         var callCount = 0;
         var args = null;
-        var test = function(test0, test1) { callCount++; args = arguments; };
+        var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        $invokeTestInstance.inject('test0', 0);
-        $invokeTestInstance.inject('test1', 1);
-        $invokeTestInstance.inject('test2', 2);
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
     });
 
     it('return value', function() {
@@ -35,60 +52,131 @@ describe('unit', function() {
     it('clone', function() {
         var callCount = 0;
         var args = null;
-        var test = function(test0) { callCount++; args = arguments; };
+        var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        $invokeTestInstance.inject('test0', 0);
+        injectRawSequence($invokeTestInstance, 'name', 'valueBeforeOverride', 6);
         var $clonedInvokeTestInstance = $invokeTestInstance.clone();
 
-        $clonedInvokeTestInstance.inject('test0', 1);
+        injectRawSequence($clonedInvokeTestInstance, 'name', 'valueAfterOverride', 6);
 
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(1);
-        expect(args[0]).toBe(0);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('valueBeforeOverride0');
+        expect(args[1]).toBe('valueBeforeOverride4');
+        expect(args[2]).toBe('valueBeforeOverride2');
 
         $clonedInvokeTestInstance(test);
         expect(callCount).toBe(2);
-        expect(args.length).toBe(1);
-        expect(args[0]).toBe(1);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('valueAfterOverride0');
+        expect(args[1]).toBe('valueAfterOverride4');
+        expect(args[2]).toBe('valueAfterOverride2');
     });
 
     it('clear injection', function() {
         var callCount = 0;
         var args = null;
-        var test = function(test0, test1) { callCount++; args = arguments; };
+        var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        $invokeTestInstance.inject('test0', 0);
-        $invokeTestInstance.inject('test1', 1);
-        $invokeTestInstance.inject('test2', 2);
-        $invokeTestInstance.clearInject('test0');
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
+        $invokeTestInstance.clearInject('name4');
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(undefined);
-        expect(args[1]).toBe(1);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe(undefined);
+        expect(args[2]).toBe('value2');
     });
 
     it('inject parent', function() {
         var callCount = 0;
         var args = null;
-        var test = function(test0, test1) { callCount++; args = arguments; };
+        var test = function(name0, name4, name2, nameOverride0, nameOverride4, nameOverride2) { callCount++; args = arguments; };
         var $inheritedInvokeTestInstance = $invokeTestInstance.inherit();
 
-        $invokeTestInstance.inject('test0', 0);
-        $inheritedInvokeTestInstance.inject('test1', 1);
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
+        injectRawSequence($invokeTestInstance, 'nameOverride', 'valueBeforeOverride', 6);
+        injectRawSequence($inheritedInvokeTestInstance, 'nameOverride', 'valueAfterOverride', 6);
 
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(undefined);
+        expect(args.length).toBe(6);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
+        expect(args[3]).toBe('valueBeforeOverride0');
+        expect(args[4]).toBe('valueBeforeOverride4');
+        expect(args[5]).toBe('valueBeforeOverride2');
 
         $inheritedInvokeTestInstance(test);
         expect(callCount).toBe(2);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
+        expect(args.length).toBe(6);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
+        expect(args[3]).toBe('valueAfterOverride0');
+        expect(args[4]).toBe('valueAfterOverride4');
+        expect(args[5]).toBe('valueAfterOverride2');
+    });
+
+    it('inject raw value', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(rawValue) { callCount++; args = arguments; return 'done'; };
+
+        $invokeTestInstance.inject('rawValue', 'trueValue');
+        $invokeTestInstance(test).done(function (result) {
+            expect(result).toBe('done');
+        });
+
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe('trueValue');
+    });
+
+    it('inject sync factory', function() {
+        var callCount = 0;
+        var args = null;
+        var factoryCallCount = 0;
+        var test = function(syncFactory) { callCount++; args = arguments; return 'done'; };
+        var syncFactory = function(name0, name4, name2) { factoryCallCount++; return arguments; };
+
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
+        $invokeTestInstance.injectFactory('syncFactory', syncFactory);
+        $invokeTestInstance(test).done(function (result) {
+            expect(result).toBe('done');
+        });
+
+        expect(callCount).toBe(1);
+        expect(factoryCallCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0].length).toBe(3);
+        expect(args[0][0]).toBe('value0');
+        expect(args[0][1]).toBe('value4');
+        expect(args[0][2]).toBe('value2');
+    });
+
+    it('inject async factory', function(done) {
+        var callCount = 0;
+        var args = null;
+        var factoryCallCount = 0;
+        var test = function(asyncFactory) { callCount++; args = arguments; return 'done'; };
+        var asyncFactory = function(name0, name4, name2, $done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
+
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
+        $invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
+        $invokeTestInstance(test).done(function (result) {
+            expect(result).toBe('done');
+            expect(callCount).toBe(1);
+            expect(factoryCallCount).toBe(1);
+            expect(args.length).toBe(1);
+            expect(args[0].length).toBe(4);
+            expect(args[0][0]).toBe('value0');
+            expect(args[0][1]).toBe('value4');
+            expect(args[0][2]).toBe('value2');
+            done();
+        });
     });
 
     it('invoke without arguments', function() {
@@ -114,94 +202,61 @@ describe('unit', function() {
     it('invoke with raw value', function() {
         var callCount = 0;
         var args = null;
-        var test = function(test0, test1) { callCount++; args = arguments; };
+        var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        $invokeTestInstance.inject('test0', 0);
-        $invokeTestInstance.inject('test1', 1);
-        $invokeTestInstance.inject('test2', 2);
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
     });
 
     it('invoke with raw value in array', function() {
         var callCount = 0;
         var args = null;
-        var test = function(test0, test1) { callCount++; args = arguments; };
+        var test = function() { callCount++; args = arguments; };
 
-        $invokeTestInstance.inject('test0', 0);
-        $invokeTestInstance.inject('test1', 1);
-        $invokeTestInstance.inject('test2', 2);
-        $invokeTestInstance.inject('test', 1);
-        $invokeTestInstance(['test0', 'test1', test]);
+        injectRawSequence($invokeTestInstance, 'name', 'value', 6);
+        $invokeTestInstance(['name0', 'name4', 'name2', test]);
         expect(callCount).toBe(1);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
     });
 
-    it('invoke with facotry value', function() {
+    it('invoke with factory value', function() {
         var callCount = 0;
         var args = null;
         var factoryCallCount = 0;
-        var test = function(test0, test1) { callCount++; args = arguments; };
-        var factory0 = function() { factoryCallCount++; return 0; };
-        var factory1 = function() { factoryCallCount++; return 1; };
-        var factory2 = function() { factoryCallCount++; return 2; };
+        var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        $invokeTestInstance.injectFactory('test0', factory0);
-        $invokeTestInstance.injectFactory('test1', factory1);
-        $invokeTestInstance.injectFactory('test2', factory2);
+        injectFactorySequence($invokeTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
         $invokeTestInstance(test);
         expect(callCount).toBe(1);
-        expect(factoryCallCount).toBe(2);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
+        expect(factoryCallCount).toBe(3);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
     });
 
-    it('invoke with facotry value in array', function() {
+    it('invoke with factory value in array', function() {
         var callCount = 0;
         var args = null;
         var factoryCallCount = 0;
-        var test = function(test0, test1) { callCount++; args = arguments; };
-        var factory0 = function() { factoryCallCount++; return 0; };
-        var factory1 = function() { factoryCallCount++; return 1; };
-        var factory2 = function() { factoryCallCount++; return 2; };
+        var test = function() { callCount++; args = arguments; };
 
-        $invokeTestInstance.injectFactory('test0', factory0);
-        $invokeTestInstance.injectFactory('test1', factory1);
-        $invokeTestInstance.injectFactory('test2', factory2);
-        $invokeTestInstance(['test0', 'test1', test]);
+        injectFactorySequence($invokeTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
+        $invokeTestInstance(['name0', 'name4', 'name2', test]);
         expect(callCount).toBe(1);
-        expect(factoryCallCount).toBe(2);
-        expect(args.length).toBe(2);
-        expect(args[0]).toBe(0);
-        expect(args[1]).toBe(1);
-    });
-
-    it('invoke with async facotry value', function(done) {
-        var callCount = 0;
-        var args = null;
-        var factoryCallCount = 0;
-        var test = function(test0, test1) { callCount++; args = arguments; };
-        var factory0 = function($done) { factoryCallCount = true; setTimeout(function () { $done(0); }, 1); };
-        var factory1 = function() { factoryCallCount++; return 1; };
-        var factory2 = function() { factoryCallCount++; return 2; };
-
-        $invokeTestInstance.injectFactory('test0', factory0);
-        $invokeTestInstance.injectFactory('test1', factory1);
-        $invokeTestInstance.injectFactory('test2', factory2);
-        $invokeTestInstance(test).done(function () {
-            expect(callCount).toBe(1);
-            expect(factoryCallCount).toBe(2);
-            expect(args.length).toBe(2);
-            expect(args[0]).toBe(0);
-            expect(args[1]).toBe(1);
-            done();
-        });
+        expect(factoryCallCount).toBe(3);
+        expect(args.length).toBe(3);
+        expect(args[0]).toBe('value0');
+        expect(args[1]).toBe('value4');
+        expect(args[2]).toBe('value2');
     });
 });
 
