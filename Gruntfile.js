@@ -40,14 +40,18 @@
         watch: {
             ts: {
                 files: ['<%= ts.debug.src %>'],
-                tasks: ['ts:debug', 'jasmine:debug']
+                tasks: ['uglify:ship', 'jasmine:ship']
             },
             uglify: {
-                files: ['build/invoker.min.js'],
+                files: ['<%= ts.debug.out %>'],
                 tasks: ['ts:debug', 'jasmine:ship']
             },
-            test: {
+            test_debug: {
                 files: ['<%= jasmine.debug.options.specs %>'],
+                tasks: ['jasmine:debug'],
+            },
+            test_ship: {
+                files: ['<%= jasmine.ship.options.specs %>'],
                 tasks: ['jasmine:ship'],
             },
         },
