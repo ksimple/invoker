@@ -1,9 +1,9 @@
-var $invoke = (function() {
+var $invoke = (function () {
     function resultSender() {
         var result;
         var resultReceived = false;
         var callback;
-        var doneCalled = false
+        var doneCalled = false;
 
         this.done = function (func) {
             if (doneCalled) {
@@ -36,12 +36,17 @@ var $invoke = (function() {
         };
     }
 
-    function createInvoke(parent = null) {
+    function createInvoke(parent) {
+        if (typeof parent === "undefined") { parent = null; }
         var injection = {};
         var config = {};
         var factoryInvoker = null;
 
-        var $invoke: any = function $invoke(...args) {
+        var $invoke = function $invoke() {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
             if (args.length == 0) {
                 return;
             }
@@ -79,7 +84,9 @@ var $invoke = (function() {
         }
 
         function createFacotryInvokerCallback(setArgs, index) {
-            return (result) => setArgs(index, result);
+            return function (result) {
+                return setArgs(index, result);
+            };
         }
 
         function invokeInternal(args, func, resultSender) {
@@ -117,9 +124,10 @@ var $invoke = (function() {
 
             if (typeof oneInjection === 'undefined') {
                 if (parent) {
-                    parent([name, (r) => result.setResult(r)]);
+                    parent([name, function (r) {
+                            return result.setResult(r);
+                        }]);
                 } else {
-                    // should throw exception here
                     result.setResult(undefined);
                 }
             } else if (oneInjection.type === 'raw') {
@@ -129,12 +137,16 @@ var $invoke = (function() {
                     factoryInvoker = $invoke.inherit();
                 }
 
-                factoryInvoker.inject('$done', (r) => result.setResult(r));
+                factoryInvoker.inject('$done', function (r) {
+                    return result.setResult(r);
+                });
 
                 if (oneInjection.isAsync) {
                     factoryInvoker(oneInjection.factory);
                 } else {
-                    factoryInvoker(oneInjection.factory).done((r) => result.setResult(r));
+                    factoryInvoker(oneInjection.factory).done(function (r) {
+                        return result.setResult(r);
+                    });
                 }
             } else {
                 throw "Not recongnized injection type";
@@ -159,14 +171,14 @@ var $invoke = (function() {
             injection[name] = {
                 type: 'factory',
                 isAsync: factory.indexOf('$done') >= 0,
-                factory: factory,
+                factory: factory
             };
         };
 
         $invoke.inject = function $invoke$inject(name, value) {
             injection[name] = {
                 type: 'raw',
-                rawValue: value,
+                rawValue: value
             };
         };
 
@@ -207,10 +219,9 @@ var $invoke = (function() {
             return instance;
         };
 
-
         return $invoke;
     }
 
     return createInvoke();
 })();
-
+//# sourceMappingURL=invoker.js.map

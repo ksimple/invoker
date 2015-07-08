@@ -1,0 +1,26 @@
+{
+  "name": "invoker",
+  "version": "1.0.0",
+  "homepage": "https://github.com/ksimple/invoker",
+  "description": "A light dependency injection of javascript",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "dependency",
+    "injection",
+    "inject",
+    "DI"
+  ],
+  "authors": [
+    "Bin Du"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
