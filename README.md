@@ -9,42 +9,42 @@ grunt test
 ```
 APIs
 ---
-- $invoke(...)  
+- invoker(...)  
 Invoke a function with injections. This is an invoke object.
 
-- $invoke.inject(name, value)  
+- invoker.inject(name, value)  
 Inject a named constant value
 
-- $invoke.injectFactory(name, value)  
+- invoker.injectFactory(name, value)  
 Inject a named factory, value should be an function
 
-- $invoke.clearInject(name)  
+- invoker.clearInject(name)  
 Clear a named injection
 
-- $invoke.inherit()  
-Create a child invoke object which inherit from $invoke. Child invoke can resolve inject from parent one and override the injection with the same name.
+- invoker.inherit()  
+Create a child invoke object which inherit from invoker. Child invoke can resolve inject from parent one and override the injection with the same name.
 
-- $invoke.clone()  
-Clone $invoke
+- invoker.clone()  
+Clone invoker
 
-- $invoke.create  
+- invoker.create  
 Create a new invoke object which has null parent
 
 Examples
 ---
 - Inject a constant value  
 ```
-$invoke.inject('test', 'Hello, world');
+invoker.inject('test', 'Hello, world');
 var func = function(test) {
   console.log(test);
 };
-// or $invoke(['test', func]);
-// or $invoke('test', func);
-$invoke(func);
+// or invoker(['test', func]);
+// or invoker('test', func);
+invoker(func);
 ```
 - Inject a constant value in async mode  
 ```
-$invoke.inject('test', 'Hello, world');
+invoker.inject('test', 'Hello, world');
 var func = function(test, $done) {
   console.log(test);
   setTimeout(
@@ -53,12 +53,12 @@ var func = function(test, $done) {
     },
     1000);
 };
-$invoke(func);
+invoker(func);
 ```
 - Inject a factory
 ```
-$invoke.inject('factoryDependency', 'depend');
-$invoke.injectFactory(
+invoker.inject('factoryDependency', 'depend');
+invoker.injectFactory(
   'test',
   // or ['factoryDependency', function (dep) { console.log(dep); }]
   function(factoryDependency) {
@@ -68,11 +68,11 @@ $invoke.injectFactory(
 var func = function(test) {
   console.log(test);
 };
-$invoke(func);
+invoker(func);
 ```
 - Inject an async factory
 ```
-$invoke.injectFactory(
+invoker.injectFactory(
   'test',
   function($done) {
     setTimeout(function() {
@@ -84,14 +84,14 @@ $invoke.injectFactory(
 var func = function(test) {
   console.log(test);
 };
-$invoke(func);
+invoker(func);
 ```
 - Do something after the method is invoked
 ```
 var func = function(test) {
   return test;
 };
-$invoke.injectFactory(
+invoker.injectFactory(
   'test',
   function($done) {
     setTimeout(function() {
@@ -100,7 +100,7 @@ $invoke.injectFactory(
     1000);
   }
 );
-$invoke(func)
+invoker(func)
   .done(function (result) {
     // result is 'done'
     console.log(result);

@@ -1,1 +1,1 @@
-declare var $invoke: any;
+declare var invoker: any;
