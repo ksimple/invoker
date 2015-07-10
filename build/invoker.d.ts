@@ -1,1 +1,1 @@
-declare var invoker: any;
+declare var invoke: any;

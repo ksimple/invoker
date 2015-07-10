@@ -1,17 +1,17 @@
 describe('unit', function() {
-    invokerTestInstance = null;
+    invokeTestInstance = null;
 
     beforeEach(function() {
-        invokerTestInstance = invoker.clone();
+        invokeTestInstance = invoke.clone();
     });
 
-    function injectRawSequence(invoker, namePrefix, valuePrefix, count) {
+    function injectRawSequence(invoke, namePrefix, valuePrefix, count) {
         for (var i = 0; i < count; i++) {
-            invoker.inject(namePrefix + i, valuePrefix + i);
+            invoke.inject(namePrefix + i, valuePrefix + i);
         }
     }
 
-    function injectFactorySequence(invoker, namePrefix, valuePrefix, count, callback) {
+    function injectFactorySequence(invoke, namePrefix, valuePrefix, count, callback) {
         function createCallaback(i) {
             return function () {
                 callback();
@@ -19,18 +19,18 @@ describe('unit', function() {
             };
         };
         for (var i = 0; i < count; i++) {
-            invoker.injectFactory(namePrefix + i, createCallaback(i));
+            invoke.injectFactory(namePrefix + i, createCallaback(i));
         }
     }
 
     it('create', function() {
-        var invokerTestInstance = invoker.create();
+        var invokeTestInstance = invoke.create();
         var callCount = 0;
         var args = null;
         var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance(test);
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(3);
         expect(args[0]).toBe('value0');
@@ -43,17 +43,17 @@ describe('unit', function() {
         var args = null;
         var test = function() { callCount++; args = arguments; return 'done'; };
 
-        invokerTestInstance(test).done(function (result) {
+        invokeTestInstance(test).done(function (result) {
             expect(callCount).toBe(1);
             expect(result).toBe('done');
         });
     });
 
-    it('injected invoker', function() {
+    it('injected invoke', function() {
         var callCount = 0;
-        var test = function($invoker) { callCount++; return $invoker == invokerTestInstance; };
+        var test = function($invoke) { callCount++; return $invoke == invokeTestInstance; };
 
-        invokerTestInstance(test).done(function (result) {
+        invokeTestInstance(test).done(function (result) {
             expect(callCount).toBe(1);
             expect(result).toBe(true);
         });
@@ -64,12 +64,12 @@ describe('unit', function() {
         var args = null;
         var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'valueBeforeOverride', 6);
-        var $clonedInvokeTestInstance = invokerTestInstance.clone();
+        injectRawSequence(invokeTestInstance, 'name', 'valueBeforeOverride', 6);
+        var $clonedInvokeTestInstance = invokeTestInstance.clone();
 
         injectRawSequence($clonedInvokeTestInstance, 'name', 'valueAfterOverride', 6);
 
-        invokerTestInstance(test);
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(3);
         expect(args[0]).toBe('valueBeforeOverride0');
@@ -89,9 +89,9 @@ describe('unit', function() {
         var args = null;
         var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance.clearInject('name4');
-        invokerTestInstance(test);
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance.clearInject('name4');
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(3);
         expect(args[0]).toBe('value0');
@@ -103,13 +103,13 @@ describe('unit', function() {
         var callCount = 0;
         var args = null;
         var test = function(name0, name4, name2, nameOverride0, nameOverride4, nameOverride2) { callCount++; args = arguments; };
-        var $inheritedInvokeTestInstance = invokerTestInstance.inherit();
+        var $inheritedInvokeTestInstance = invokeTestInstance.inherit();
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        injectRawSequence(invokerTestInstance, 'nameOverride', 'valueBeforeOverride', 6);
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        injectRawSequence(invokeTestInstance, 'nameOverride', 'valueBeforeOverride', 6);
         injectRawSequence($inheritedInvokeTestInstance, 'nameOverride', 'valueAfterOverride', 6);
 
-        invokerTestInstance(test);
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(6);
         expect(args[0]).toBe('value0');
@@ -135,8 +135,8 @@ describe('unit', function() {
         var args = null;
         var test = function(rawValue) { callCount++; args = arguments; return 'done'; };
 
-        invokerTestInstance.inject('rawValue', 'trueValue');
-        invokerTestInstance(test).done(function (result) {
+        invokeTestInstance.inject('rawValue', 'trueValue');
+        invokeTestInstance(test).done(function (result) {
             expect(result).toBe('done');
         });
 
@@ -152,9 +152,9 @@ describe('unit', function() {
         var test = function(syncFactory) { callCount++; args = arguments; return 'done'; };
         var syncFactory = function(name0, name4, name2) { factoryCallCount++; return arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance.injectFactory('syncFactory', syncFactory);
-        invokerTestInstance(test).done(function (result) {
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance.injectFactory('syncFactory', syncFactory);
+        invokeTestInstance(test).done(function (result) {
             expect(result).toBe('done');
         });
 
@@ -174,9 +174,9 @@ describe('unit', function() {
         var test = function(asyncFactory) { callCount++; args = arguments; return 'done'; };
         var asyncFactory = function(name0, name4, name2, $done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance.injectFactory('asyncFactory', asyncFactory);
-        invokerTestInstance(test).done(function (result) {
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
+        invokeTestInstance(test).done(function (result) {
             expect(result).toBe('done');
             expect(callCount).toBe(1);
             expect(factoryCallCount).toBe(1);
@@ -194,7 +194,7 @@ describe('unit', function() {
         var args = null;
         var test = function() { callCount++; args = arguments; };
 
-        invokerTestInstance(test);
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(0);
     });
@@ -204,7 +204,7 @@ describe('unit', function() {
         var args = null;
         var test = function() { callCount++; args = arguments; };
 
-        invokerTestInstance([test]);
+        invokeTestInstance([test]);
         expect(callCount).toBe(1);
         expect(args.length).toBe(0);
     });
@@ -214,8 +214,8 @@ describe('unit', function() {
         var args = null;
         var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance(test);
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(3);
         expect(args[0]).toBe('value0');
@@ -228,8 +228,8 @@ describe('unit', function() {
         var args = null;
         var test = function() { callCount++; args = arguments; };
 
-        injectRawSequence(invokerTestInstance, 'name', 'value', 6);
-        invokerTestInstance(['name0', 'name4', 'name2', test]);
+        injectRawSequence(invokeTestInstance, 'name', 'value', 6);
+        invokeTestInstance(['name0', 'name4', 'name2', test]);
         expect(callCount).toBe(1);
         expect(args.length).toBe(3);
         expect(args[0]).toBe('value0');
@@ -243,8 +243,8 @@ describe('unit', function() {
         var factoryCallCount = 0;
         var test = function(name0, name4, name2) { callCount++; args = arguments; };
 
-        injectFactorySequence(invokerTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
-        invokerTestInstance(test);
+        injectFactorySequence(invokeTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
+        invokeTestInstance(test);
         expect(callCount).toBe(1);
         expect(factoryCallCount).toBe(3);
         expect(args.length).toBe(3);
@@ -259,8 +259,8 @@ describe('unit', function() {
         var factoryCallCount = 0;
         var test = function() { callCount++; args = arguments; };
 
-        injectFactorySequence(invokerTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
-        invokerTestInstance(['name0', 'name4', 'name2', test]);
+        injectFactorySequence(invokeTestInstance, 'name', 'value', 6, function() { factoryCallCount++; });
+        invokeTestInstance(['name0', 'name4', 'name2', test]);
         expect(callCount).toBe(1);
         expect(factoryCallCount).toBe(3);
         expect(args.length).toBe(3);

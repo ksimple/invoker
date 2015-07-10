@@ -1,4 +1,4 @@
-var invoker = (function () {
+var invoke = (function () {
     function resultSender() {
         var result;
         var resultReceived = false;
@@ -40,9 +40,9 @@ var invoker = (function () {
         if (typeof parent === "undefined") { parent = null; }
         var injection = {};
         var config = {};
-        var factoryInvoker = null;
+        var factoryInvoke = null;
 
-        var invoker = function invoker() {
+        var invoke = function invoke() {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
                 args[_i] = arguments[_i + 0];
@@ -83,7 +83,7 @@ var invoker = (function () {
             return [];
         }
 
-        function createFacotryInvokerCallback(setArgs, index) {
+        function createFacotryInvokeCallback(setArgs, index) {
             return function (result) {
                 return setArgs(index, result);
             };
@@ -113,7 +113,7 @@ var invoker = (function () {
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
 
-                    resolve(name).done(createFacotryInvokerCallback(setArgs, index));
+                    resolve(name).done(createFacotryInvokeCallback(setArgs, index));
                 }
             }
         }
@@ -122,8 +122,8 @@ var invoker = (function () {
             var oneInjection = injection[name];
             var result = new resultSender();
 
-            if (name == '$invoker') {
-                result.setResult(invoker);
+            if (name == '$invoke') {
+                result.setResult(invoke);
             } else if (typeof oneInjection === 'undefined') {
                 if (parent) {
                     parent([name, function (r) {
@@ -136,18 +136,18 @@ var invoker = (function () {
             } else if (oneInjection.type === 'raw') {
                 result.setResult(oneInjection.rawValue);
             } else if (oneInjection.type === 'factory') {
-                if (!factoryInvoker) {
-                    factoryInvoker = invoker.inherit();
+                if (!factoryInvoke) {
+                    factoryInvoke = invoke.inherit();
                 }
 
-                factoryInvoker.inject('$done', function (r) {
+                factoryInvoke.inject('$done', function (r) {
                     return result.setResult(r);
                 });
 
                 if (oneInjection.isAsync) {
-                    factoryInvoker(oneInjection.factory);
+                    factoryInvoke(oneInjection.factory);
                 } else {
-                    factoryInvoker(oneInjection.factory).done(function (r) {
+                    factoryInvoke(oneInjection.factory).done(function (r) {
                         return result.setResult(r);
                     });
                 }
@@ -158,7 +158,7 @@ var invoker = (function () {
             return result;
         }
 
-        invoker.injectFactory = function $invoke$injectFactory(name, value) {
+        invoke.injectFactory = function $invoke$injectFactory(name, value) {
             var factory, isAsync;
 
             if (typeof value === 'function') {
@@ -178,30 +178,30 @@ var invoker = (function () {
             };
         };
 
-        invoker.inject = function $invoke$inject(name, value) {
+        invoke.inject = function $invoke$inject(name, value) {
             injection[name] = {
                 type: 'raw',
                 rawValue: value
             };
         };
 
-        invoker.clearInject = function $invoke$clearInject(name) {
+        invoke.clearInject = function $invoke$clearInject(name) {
             delete injection[name];
         };
 
-        invoker.config = function $invoke$config(newConfig) {
+        invoke.config = function $invoke$config(newConfig) {
             for (var i in newConfig) {
                 config[i] = newConfig[i];
             }
         };
 
-        invoker.inherit = function $invoke$inherit() {
+        invoke.inherit = function $invoke$inherit() {
             var instance = createInvoke(this);
 
             return instance;
         };
 
-        invoker.clone = function $invoke$clone() {
+        invoke.clone = function $invoke$clone() {
             var instance = createInvoke(parent);
 
             for (var i in injection) {
@@ -216,13 +216,13 @@ var invoker = (function () {
             return instance;
         };
 
-        invoker.create = function $invoke$inherit() {
+        invoke.create = function $invoke$inherit() {
             var instance = createInvoke();
 
             return instance;
         };
 
-        return invoker;
+        return invoke;
     }
 
     return createInvoke();
