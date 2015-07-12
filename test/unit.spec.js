@@ -38,6 +38,21 @@ describe('unit', function() {
         expect(args[2]).toBe('value2');
     });
 
+    it('inherit', function() {
+        var root = invoke;
+        var child = root.inherit();
+        var grandChild = child.inherit();
+
+        child.inject('child', true);
+
+        var test = function(child, $invoke) { return arguments; };
+
+        grandChild(test).done(function (result) {
+            expect(result[0]).toBe(true);
+            expect(result[1]).toBe(grandChild);
+        });
+    });
+
     it('return value', function() {
         var callCount = 0;
         var args = null;

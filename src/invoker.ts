@@ -1,4 +1,6 @@
 var invoke = (function() {
+    var globalInovkeId = 0;
+
     function resultSender() {
         var result;
         var resultReceived = false;
@@ -78,10 +80,6 @@ var invoke = (function() {
             return [];
         }
 
-        function createFacotryInvokeCallback(setArgs, index) {
-            return (result) => setArgs(index, result);
-        }
-
         function invokeInternal(args, func, resultSender) {
             if (args.length === 0) {
                 resultSender.setResult(func.apply(null, []));
@@ -103,10 +101,14 @@ var invoke = (function() {
                     }
                 }
 
+                function resolveCallback(setArgs, index) {
+                    return (result) => setArgs(index, result);
+                }
+
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
 
-                    resolve(name).done(createFacotryInvokeCallback(setArgs, index));
+                    resolve(name).done(resolveCallback(setArgs, index));
                 }
             }
         }
@@ -209,6 +211,7 @@ var invoke = (function() {
             return instance;
         };
 
+        invoke.id = globalInovkeId++;
 
         return invoke;
     }
