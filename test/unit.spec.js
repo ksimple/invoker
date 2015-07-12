@@ -217,11 +217,39 @@ describe('unit', function() {
     it('invoke without arguments in array', function() {
         var callCount = 0;
         var args = null;
-        var test = function() { callCount++; args = arguments; };
+        var test = function(dontResolve) { callCount++; args = arguments; };
 
+        invokeTestInstance.inject('dontResolve', true);
         invokeTestInstance([test]);
         expect(callCount).toBe(1);
         expect(args.length).toBe(0);
+    });
+
+    it('invoke with this without arguments', function() {
+        var callCount = 0;
+        var args = null;
+        var _this = {};
+        var calledThis = null;
+        var test = function() { callCount++; args = arguments; calledThis = this; };
+
+        invokeTestInstance.withThis(_this, test);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(0);
+        expect(calledThis).toBe(_this);
+    });
+
+    it('invoke with this without arguments in array', function() {
+        var callCount = 0;
+        var args = null;
+        var _this = {};
+        var calledThis = null;
+        var test = function(dontResolve) { callCount++; args = arguments; calledThis = this };
+
+        invokeTestInstance.inject('dontResolve', true);
+        invokeTestInstance.withThis([_this, test]);
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(0);
+        expect(calledThis).toBe(_this);
     });
 
     it('invoke with raw value', function() {

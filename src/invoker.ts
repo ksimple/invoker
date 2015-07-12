@@ -60,7 +60,7 @@ var invoke = (function() {
 
             var result = new resultSender();
 
-            invokeInternal(args, func, result);
+            invokeInternal(args, null, func, result);
             return result;
         };
 
@@ -80,9 +80,9 @@ var invoke = (function() {
             return [];
         }
 
-        function invokeInternal(args, func, resultSender) {
+        function invokeInternal(args, _this, func, resultSender) {
             if (args.length === 0) {
-                resultSender.setResult(func.apply(null, []));
+                resultSender.setResult(func.apply(_this, []));
             } else {
                 var resolvedCount = 0;
                 var resolvedArgs = [];
@@ -94,9 +94,9 @@ var invoke = (function() {
 
                     if (resolvedCount >= args.length) {
                         if (async) {
-                            func.apply(null, resolvedArgs);
+                            func.apply(_this, resolvedArgs);
                         } else {
-                            resultSender.setResult(func.apply(null, resolvedArgs));
+                            resultSender.setResult(func.apply(_this, resolvedArgs));
                         }
                     }
                 }
@@ -146,6 +146,47 @@ var invoke = (function() {
 
             return result;
         }
+
+        invoke.withThis = function $invoke$withThis(...args) {
+            if (args.length == 0) {
+                return;
+            }
+
+            var _this, func, arrayPassed;
+
+            if (args.length == 1) {
+                if (!(args[0] instanceof Array)) {
+                    return;
+                }
+
+                args = args[0];
+
+                if (args.length < 2) {
+                    return;
+                }
+
+                func = args.pop();
+                _this = args.pop();
+            } else {
+                args = Array.prototype.slice.apply(arguments);
+
+                if (args.length < 2) {
+                    return;
+                }
+
+                func = args.pop();
+                _this = args.pop();
+
+                if (args.length == 0) {
+                    args = getArgNames(func);
+                }
+            }
+
+            var result = new resultSender();
+
+            invokeInternal(args, _this, func, result);
+            return result;
+        };
 
         invoke.injectFactory = function $invoke$injectFactory(name, value) {
             var factory, isAsync;
