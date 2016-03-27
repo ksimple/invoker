@@ -9,7 +9,7 @@ var invoke = (function() {
 
         this.done = function (func) {
             if (doneCalled) {
-                throw "Done can't be call twice";
+                throw new Error("Done can't be call twice");
             }
 
             doneCalled = true;
@@ -23,7 +23,7 @@ var invoke = (function() {
 
         this.setResult = function (newResult) {
             if (resultReceived) {
-                throw "setResult can't be call twice";
+                throw new Error("setResult can't be call twice");
             }
 
             if (doneCalled) {
@@ -141,7 +141,27 @@ var invoke = (function() {
                     factoryInvoke(oneInjection.factory).done((r) => result.setResult(r));
                 }
             } else {
-                throw "Not recongnized injection type";
+                throw new Error("Not recongnized injection type");
+            }
+
+            return result;
+        }
+
+        invoke.resolve = function $invoke$get(name) {
+            return resolve(name);
+        }
+
+        invoke.get = function $invoke$get(name) {
+            var result;
+            var doneCalled = false;
+
+            resolve(name).done((r) => {
+                result = r;
+                doneCalled = true;
+            });
+
+            if (!doneCalled) {
+                throw new Error("Can't get result of async injected");
             }
 
             return result;

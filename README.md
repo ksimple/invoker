@@ -18,6 +18,9 @@ Inject a named constant value
 - invoke.injectFactory(name, value)  
 Inject a named factory, value should be an function
 
+- invoke.get(name)  
+Get a named inject value, this method will throw if the result is returned in async mode
+
 - invoke.clearInject(name)  
 Clear a named injection
 

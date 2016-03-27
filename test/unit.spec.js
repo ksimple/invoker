@@ -64,6 +64,25 @@ describe('unit', function() {
         });
     });
 
+    it('get raw value', function() {
+        var callCount = 0;
+        var args = null;
+
+        invokeTestInstance.inject('rawValue', 'trueValue');
+        expect(invokeTestInstance.get('rawValue')).toBe('trueValue');
+    });
+
+    it('get async value and fail', function() {
+        var callCount = 0;
+        var args = null;
+        var factoryCallCount = 0;
+        var asyncFactory = function($done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
+
+        invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
+        expect(function () { invokeTestInstance.get('asyncFactory'); }).toThrowError(/async/);
+        expect(factoryCallCount).toBe(1);
+    });
+
     it('injected invoke', function() {
         var callCount = 0;
         var test = function($invoke) { callCount++; return $invoke == invokeTestInstance; };
