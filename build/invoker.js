@@ -49,24 +49,7 @@ var invoke = (function () {
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
                 args[_i] = arguments[_i + 0];
             }
-            if (args.length == 0) {
-                return;
-            }
-
-            args = Array.prototype.slice.apply(arguments);
-            var func = args.pop();
-
-            if (typeof func === 'function' && args.length === 0) {
-                args = getArgNames(func);
-            } else if (typeof func === 'object' && func instanceof Array) {
-                args = func;
-                func = args.pop();
-            }
-
-            var result = new resultSender();
-
-            invokeInternal(args, null, func, result);
-            return result;
+            return call.apply(this, args);
         };
 
         function getArgNames(func) {
@@ -85,23 +68,27 @@ var invoke = (function () {
             return [];
         }
 
-        function invokeInternal(args, _this, func, resultSender) {
+        function invokeInternal(args, _this, func, isCreateInstance, resultSender) {
             if (args.length === 0) {
                 resultSender.setResult(func.apply(_this, []));
             } else {
                 var resolvedCount = 0;
                 var resolvedArgs = [];
-                var async = false;
 
                 function setArgs(index, value) {
                     resolvedArgs[index] = value;
                     resolvedCount++;
 
                     if (resolvedCount >= args.length) {
-                        if (async) {
-                            func.apply(_this, resolvedArgs);
-                        } else {
+                        if (!isCreateInstance) {
                             resultSender.setResult(func.apply(_this, resolvedArgs));
+                        } else {
+                            function F() {
+                                func.apply(this, resolvedArgs);
+                            }
+
+                            F.prototype = func.prototype;
+                            resultSender.setResult(new F());
                         }
                     }
                 }
@@ -159,6 +146,57 @@ var invoke = (function () {
 
             return result;
         }
+
+        function call() {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            if (args.length == 0) {
+                return;
+            }
+
+            args = Array.prototype.slice.apply(arguments);
+            var func = args.pop();
+
+            if (typeof func === 'function' && args.length === 0) {
+                args = getArgNames(func);
+            } else if (typeof func === 'object' && func instanceof Array) {
+                args = func;
+                func = args.pop();
+            }
+
+            var result = new resultSender();
+
+            invokeInternal(args, null, func, false, result);
+            return result;
+        }
+        ;
+
+        invoke.createInstance = function $invoke$createInstance() {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            if (args.length == 0) {
+                return;
+            }
+
+            args = Array.prototype.slice.apply(arguments);
+            var func = args.pop();
+
+            if (typeof func === 'function' && args.length === 0) {
+                args = getArgNames(func);
+            } else if (typeof func === 'object' && func instanceof Array) {
+                args = func;
+                func = args.pop();
+            }
+
+            var result = new resultSender();
+
+            invokeInternal(args, null, func, true, result);
+            return result;
+        };
 
         invoke.resolve = function $invoke$get(name) {
             return resolve(name);
@@ -221,7 +259,7 @@ var invoke = (function () {
 
             var result = new resultSender();
 
-            invokeInternal(args, _this, func, result);
+            invokeInternal(args, _this, func, false, result);
             return result;
         };
 

@@ -133,6 +133,21 @@ describe('unit', function() {
         expect(args[2]).toBe('value2');
     });
 
+    it('inject createInstance', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(rawValue) { callCount++; args = arguments; };
+
+        invokeTestInstance.inject('rawValue', 'trueValue');
+        invokeTestInstance.createInstance(test).done(function (result) {
+            expect(result).toEqual(jasmine.any(test));
+        });
+
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe('trueValue');
+    });
+
     it('inject parent', function() {
         var callCount = 0;
         var args = null;

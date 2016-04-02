@@ -12,6 +12,9 @@ APIs
 - invoke(...)  
 Invoke a function with injections. This is an invoke object.
 
+- invoke.createInstance(...)  
+New a class with injections.
+
 - invoke.inject(name, value)  
 Inject a named constant value
 
