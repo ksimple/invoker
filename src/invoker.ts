@@ -70,12 +70,24 @@ var invoke = (function() {
         }
 
         function invokeInternal(args, _this, func, isCreateInstance, allowAsyncResolve, resultSender) {
-            if (args.length === 0) {
-                resultSender.setResult(func.apply(_this, []));
-            } else {
-                var resolvedCount = 0;
-                var resolvedArgs = [];
+            var resolvedCount = 0;
+            var resolvedArgs = [];
 
+            if (isCreateInstance) {
+                function F() {
+                    func.apply(this, resolvedArgs);
+                }
+
+                F.prototype = func.prototype;
+            }
+
+            if (args.length === 0) {
+                if (!isCreateInstance) {
+                    resultSender.setResult(func.apply(_this, resolvedArgs));
+                } else {
+                    resultSender.setResult(new F());
+                }
+            } else {
                 function setArgs(index, value) {
                     resolvedArgs[index] = value;
                     resolvedCount++;
@@ -84,11 +96,6 @@ var invoke = (function() {
                         if (!isCreateInstance) {
                             resultSender.setResult(func.apply(_this, resolvedArgs));
                         } else {
-                            function F() {
-                                func.apply(this, resolvedArgs);
-                            }
-
-                            F.prototype = func.prototype;
                             resultSender.setResult(new F());
                         }
                     }
