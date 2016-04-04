@@ -9,7 +9,7 @@ var invoke = (function() {
 
         this.done = function (func) {
             if (doneCalled) {
-                throw new Error("Done can't be call twice");
+                throw new Error("Done can't be call twice.");
             }
 
             doneCalled = true;
@@ -23,7 +23,7 @@ var invoke = (function() {
 
         this.setResult = function (newResult) {
             if (resultReceived) {
-                throw new Error("setResult can't be call twice");
+                throw new Error("setResult can't be call twice.");
             }
 
             if (doneCalled) {
@@ -44,7 +44,13 @@ var invoke = (function() {
         var factoryInvoke = null;
 
         var invoke: any = function invoke(...args) {
-            return call.apply(this, args);
+            var result;
+
+            call.call(this, args, false).done((r) => {
+                result = r;
+            });
+
+            return result;
         };
 
         function getArgNames(func) {
@@ -63,7 +69,7 @@ var invoke = (function() {
             return [];
         }
 
-        function invokeInternal(args, _this, func, isCreateInstance, resultSender) {
+        function invokeInternal(args, _this, func, isCreateInstance, allowAsyncResolve, resultSender) {
             if (args.length === 0) {
                 resultSender.setResult(func.apply(_this, []));
             } else {
@@ -95,12 +101,12 @@ var invoke = (function() {
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
 
-                    resolve(name).done(resolveCallback(setArgs, index));
+                    resolve(name, allowAsyncResolve).done(resolveCallback(setArgs, index));
                 }
             }
         }
 
-        function resolve(name) {
+        function resolve(name, allowAsyncResolve) {
             var oneInjection = injection[name];
             var result = new resultSender();
 
@@ -116,6 +122,10 @@ var invoke = (function() {
             } else if (oneInjection.type === 'raw') {
                 result.setResult(oneInjection.rawValue);
             } else if (oneInjection.type === 'factory') {
+                if (oneInjection.isAsync && !allowAsyncResolve) {
+                    throw new Error("Resolve async dependency is not allowed.");
+                }
+
                 if (!factoryInvoke) {
                     factoryInvoke = invoke.inherit();
                 }
@@ -125,21 +135,20 @@ var invoke = (function() {
                 if (oneInjection.isAsync) {
                     factoryInvoke(oneInjection.factory);
                 } else {
-                    factoryInvoke(oneInjection.factory).done((r) => result.setResult(r));
+                    result.setResult(factoryInvoke(oneInjection.factory));
                 }
             } else {
-                throw new Error("Not recongnized injection type");
+                throw new Error("Not recongnized injection type.");
             }
 
             return result;
         }
 
-        function call (...args) {
+        function call(args, allowAsyncResolve) {
             if (args.length == 0) {
                 return;
             }
 
-            args = Array.prototype.slice.apply(arguments);
             var func = args.pop();
 
             if (typeof func === 'function' && args.length === 0) {
@@ -151,8 +160,12 @@ var invoke = (function() {
 
             var result = new resultSender();
 
-            invokeInternal(args, null, func, false, result);
+            invokeInternal(args, this, func, false, allowAsyncResolve, result);
             return result;
+        };
+
+        invoke.callAsync = function $invoke$callAsync(...args) {
+            return call.call(this, args, true);
         };
 
         invoke.createInstance = function $invoke$createInstance(...args) {
@@ -171,71 +184,50 @@ var invoke = (function() {
             }
 
             var result = new resultSender();
+            var instance;
 
-            invokeInternal(args, null, func, true, result);
-            return result;
-        };
-
-        invoke.resolve = function $invoke$get(name) {
-            return resolve(name);
-        }
-
-        invoke.get = function $invoke$get(name) {
-            var result;
-            var doneCalled = false;
-
-            resolve(name).done((r) => {
-                result = r;
-                doneCalled = true;
+            invokeInternal(args, null, func, true, false, result);
+            result.done((result) => {
+                instance = result;
             });
 
-            if (!doneCalled) {
-                throw new Error("Can't get result of async injected");
-            }
+            return instance;
+        };
 
-            return result;
-        }
-
-        invoke.withThis = function $invoke$withThis(...args) {
+        invoke.createInstanceAsync = function $invoke$createInstance(...args) {
             if (args.length == 0) {
                 return;
             }
 
-            var _this, func, arrayPassed;
+            args = Array.prototype.slice.apply(arguments);
+            var func = args.pop();
 
-            if (args.length == 1) {
-                if (!(args[0] instanceof Array)) {
-                    return;
-                }
-
-                args = args[0];
-
-                if (args.length < 2) {
-                    return;
-                }
-
+            if (typeof func === 'function' && args.length === 0) {
+                args = getArgNames(func);
+            } else if (typeof func === 'object' && func instanceof Array) {
+                args = func;
                 func = args.pop();
-                _this = args.pop();
-            } else {
-                args = Array.prototype.slice.apply(arguments);
-
-                if (args.length < 2) {
-                    return;
-                }
-
-                func = args.pop();
-                _this = args.pop();
-
-                if (args.length == 0) {
-                    args = getArgNames(func);
-                }
             }
 
             var result = new resultSender();
 
-            invokeInternal(args, _this, func, false, result);
+            invokeInternal(args, null, func, true, true, result);
             return result;
         };
+
+        invoke.resolve = function $invoke$resolve(name) {
+            var result;
+
+            resolve(name, false).done((r) => {
+                result = r;
+            });
+
+            return result;
+        }
+
+        invoke.resolveAsync = function $invoke$get(name) {
+            return resolve(name, true);
+        }
 
         invoke.injectFactory = function $invoke$injectFactory(name, value) {
             var factory, isAsync;

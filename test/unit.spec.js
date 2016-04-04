@@ -47,10 +47,10 @@ describe('unit', function() {
 
         var test = function(child, $invoke) { return arguments; };
 
-        grandChild(test).done(function (result) {
-            expect(result[0]).toBe(true);
-            expect(result[1]).toBe(grandChild);
-        });
+        var result = grandChild(test);
+
+        expect(result[0]).toBe(true);
+        expect(result[1]).toBe(grandChild);
     });
 
     it('return value', function() {
@@ -58,10 +58,10 @@ describe('unit', function() {
         var args = null;
         var test = function() { callCount++; args = arguments; return 'done'; };
 
-        invokeTestInstance(test).done(function (result) {
-            expect(callCount).toBe(1);
-            expect(result).toBe('done');
-        });
+        var result = invokeTestInstance(test);
+
+        expect(callCount).toBe(1);
+        expect(result).toBe('done');
     });
 
     it('get raw value', function() {
@@ -69,7 +69,7 @@ describe('unit', function() {
         var args = null;
 
         invokeTestInstance.inject('rawValue', 'trueValue');
-        expect(invokeTestInstance.get('rawValue')).toBe('trueValue');
+        expect(invokeTestInstance.resolve('rawValue')).toBe('trueValue');
     });
 
     it('get async value and fail', function() {
@@ -79,15 +79,25 @@ describe('unit', function() {
         var asyncFactory = function($done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
 
         invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
-        expect(function () { invokeTestInstance.get('asyncFactory'); }).toThrowError(/async/);
-        expect(factoryCallCount).toBe(1);
+        expect(function () { invokeTestInstance.resolve('asyncFactory'); }).toThrowError(/async/);
+        expect(factoryCallCount).toBe(0);
     });
 
     it('injected invoke', function() {
         var callCount = 0;
         var test = function($invoke) { callCount++; return $invoke == invokeTestInstance; };
 
-        invokeTestInstance(test).done(function (result) {
+        var result = invokeTestInstance(test);
+
+        expect(callCount).toBe(1);
+        expect(result).toBe(true);
+    });
+
+    it('injected invoke async', function() {
+        var callCount = 0;
+        var test = function($invoke) { callCount++; return $invoke == invokeTestInstance; };
+
+        invokeTestInstance.callAsync(test).done(function (result) {
             expect(callCount).toBe(1);
             expect(result).toBe(true);
         });
@@ -139,7 +149,21 @@ describe('unit', function() {
         var test = function(rawValue) { callCount++; args = arguments; };
 
         invokeTestInstance.inject('rawValue', 'trueValue');
-        invokeTestInstance.createInstance(test).done(function (result) {
+        var result = invokeTestInstance.createInstance(test);
+
+        expect(result).toEqual(jasmine.any(test));
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe('trueValue');
+    });
+
+    it('inject createInstanceAsync', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(rawValue) { callCount++; args = arguments; };
+
+        invokeTestInstance.inject('rawValue', 'trueValue');
+        invokeTestInstance.createInstanceAsync(test).done(function (result) {
             expect(result).toEqual(jasmine.any(test));
         });
 
@@ -185,10 +209,9 @@ describe('unit', function() {
         var test = function(rawValue) { callCount++; args = arguments; return 'done'; };
 
         invokeTestInstance.inject('rawValue', 'trueValue');
-        invokeTestInstance(test).done(function (result) {
-            expect(result).toBe('done');
-        });
+        var result = invokeTestInstance(test);
 
+        expect(result).toBe('done');
         expect(callCount).toBe(1);
         expect(args.length).toBe(1);
         expect(args[0]).toBe('trueValue');
@@ -203,10 +226,9 @@ describe('unit', function() {
 
         injectRawSequence(invokeTestInstance, 'name', 'value', 6);
         invokeTestInstance.injectFactory('syncFactory', syncFactory);
-        invokeTestInstance(test).done(function (result) {
-            expect(result).toBe('done');
-        });
+        var result = invokeTestInstance(test);
 
+        expect(result).toBe('done');
         expect(callCount).toBe(1);
         expect(factoryCallCount).toBe(1);
         expect(args.length).toBe(1);
@@ -225,7 +247,7 @@ describe('unit', function() {
 
         injectRawSequence(invokeTestInstance, 'name', 'value', 6);
         invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
-        invokeTestInstance(test).done(function (result) {
+        invokeTestInstance.callAsync(test).done(function (result) {
             expect(result).toBe('done');
             expect(callCount).toBe(1);
             expect(factoryCallCount).toBe(1);
@@ -266,24 +288,25 @@ describe('unit', function() {
         var calledThis = null;
         var test = function() { callCount++; args = arguments; calledThis = this; };
 
-        invokeTestInstance.withThis(_this, test);
+        _this.invoke = invokeTestInstance;
+        _this.invoke(test);
         expect(callCount).toBe(1);
         expect(args.length).toBe(0);
         expect(calledThis).toBe(_this);
     });
 
-    it('invoke with this without arguments in array', function() {
+    it('invoke with this without arguments async', function() {
         var callCount = 0;
         var args = null;
         var _this = {};
         var calledThis = null;
-        var test = function(dontResolve) { callCount++; args = arguments; calledThis = this };
+        var test = function() { callCount++; args = arguments; calledThis = this; };
 
-        invokeTestInstance.inject('dontResolve', true);
-        invokeTestInstance.withThis([_this, test]);
-        expect(callCount).toBe(1);
-        expect(args.length).toBe(0);
-        expect(calledThis).toBe(_this);
+        invokeTestInstance.callAsync.call(_this, test).done(function (result) {
+            expect(callCount).toBe(1);
+            expect(args.length).toBe(0);
+            expect(calledThis).toBe(_this);
+        });
     });
 
     it('invoke with raw value', function() {
