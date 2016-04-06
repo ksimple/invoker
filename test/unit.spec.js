@@ -53,6 +53,22 @@ describe('unit', function() {
         expect(result[1]).toBe(grandChild);
     });
 
+    it('inherit and threw', function() {
+        var root = invoke;
+        var child = root.inherit();
+        var grandChild = child.inherit();
+        var args = null;
+        var factoryCallCount = 0;
+        var asyncFactory = function($done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
+
+        child.injectFactory('asyncFactory', asyncFactory);
+
+        var test = function(asyncFactory, $invoke) { return arguments; };
+
+        expect(function() { grandChild(test); }).toThrowError(/async/);
+        expect(factoryCallCount).toBe(0);
+    });
+
     it('return value', function() {
         var callCount = 0;
         var args = null;
