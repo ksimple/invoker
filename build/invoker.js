@@ -74,7 +74,7 @@ var invoke = (function () {
             return [];
         }
 
-        function invokeInternal(args, _this, func, isCreateInstance, allowAsyncResolve, resultSender) {
+        function invokeInternal(_this, func, args, locals, isCreateInstance, allowAsyncResolve, resultSender) {
             var resolvedCount = 0;
             var resolvedArgs = [];
 
@@ -115,7 +115,11 @@ var invoke = (function () {
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
 
-                    resolve(name, allowAsyncResolve).done(resolveCallback(setArgs, index));
+                    if (locals && locals[name]) {
+                        resolveCallback(setArgs, index)(locals[name]);
+                    } else {
+                        resolve(name, allowAsyncResolve).done(resolveCallback(setArgs, index));
+                    }
                 }
             }
         }
@@ -128,9 +132,13 @@ var invoke = (function () {
                 result.setResult(invoke);
             } else if (typeof oneInjection === 'undefined') {
                 if (parent) {
-                    parent([name, function (r) {
+                    if (allowAsyncResolve) {
+                        parent.resolveAsync(name).done(function (r) {
                             return result.setResult(r);
-                        }]);
+                        });
+                    } else {
+                        result.setResult(parent.resolve(name));
+                    }
                 } else {
                     // should throw exception here
                     result.setResult(undefined);
@@ -151,7 +159,7 @@ var invoke = (function () {
                 });
 
                 if (oneInjection.isAsync) {
-                    factoryInvoke(oneInjection.factory);
+                    factoryInvoke.callAsync(oneInjection.factory);
                 } else {
                     result.setResult(factoryInvoke(oneInjection.factory));
                 }
@@ -162,23 +170,44 @@ var invoke = (function () {
             return result;
         }
 
-        function call(args, allowAsyncResolve) {
-            if (args.length == 0) {
-                return;
+        function getFuncAndArgs(args) {
+            var func, locals;
+
+            if (args.length != 1 && args.length != 2) {
+                throw new Error("Bad arguments format to invoke method");
             }
 
-            var func = args.pop();
+            if (args.length == 2) {
+                locals = args.pop();
+            }
 
-            if (typeof func === 'function' && args.length === 0) {
-                args = getArgNames(func);
-            } else if (typeof func === 'object' && func instanceof Array) {
-                args = func;
+            if (args[0] instanceof Array) {
+                args = args[0];
+
+                if (args.length == 0 || typeof args[args.length - 1] !== 'function') {
+                    throw new Error("Bad arguments format to invoke method");
+                }
+
                 func = args.pop();
+            } else if (typeof args[0] === 'function') {
+                func = args[0];
+                args = getArgNames(func);
             }
+
+            return [func, args, locals];
+        }
+
+        function call(args, allowAsyncResolve) {
+            var func, locals;
+
+            var _ = getFuncAndArgs(args);
+            func = _[0];
+            args = _[1];
+            locals = _[2];
 
             var result = new resultSender();
 
-            invokeInternal(args, this, func, false, allowAsyncResolve, result);
+            invokeInternal(this, func, args, locals, false, allowAsyncResolve, result);
             return result;
         }
         ;
@@ -196,24 +225,17 @@ var invoke = (function () {
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
                 args[_i] = arguments[_i + 0];
             }
-            if (args.length == 0) {
-                return;
-            }
+            var func, locals;
 
-            args = Array.prototype.slice.apply(arguments);
-            var func = args.pop();
-
-            if (typeof func === 'function' && args.length === 0) {
-                args = getArgNames(func);
-            } else if (typeof func === 'object' && func instanceof Array) {
-                args = func;
-                func = args.pop();
-            }
+            var _ = getFuncAndArgs(args);
+            func = _[0];
+            args = _[1];
+            locals = _[2];
 
             var result = new resultSender();
             var instance;
 
-            invokeInternal(args, null, func, true, false, result);
+            invokeInternal(null, func, args, locals, true, false, result);
             result.done(function (result) {
                 instance = result;
             });
@@ -226,23 +248,16 @@ var invoke = (function () {
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
                 args[_i] = arguments[_i + 0];
             }
-            if (args.length == 0) {
-                return;
-            }
+            var func, locals;
 
-            args = Array.prototype.slice.apply(arguments);
-            var func = args.pop();
-
-            if (typeof func === 'function' && args.length === 0) {
-                args = getArgNames(func);
-            } else if (typeof func === 'object' && func instanceof Array) {
-                args = func;
-                func = args.pop();
-            }
+            var _ = getFuncAndArgs(args);
+            func = _[0];
+            args = _[1];
+            locals = _[2];
 
             var result = new resultSender();
 
-            invokeInternal(args, null, func, true, true, result);
+            invokeInternal(null, func, args, locals, true, true, result);
             return result;
         };
 
@@ -271,11 +286,11 @@ var invoke = (function () {
                 factory = value;
             }
 
-            isAsync = factory.indexOf('$done') > 0;
+            isAsync = factory[0] == '$done';
 
             injection[name] = {
                 type: 'factory',
-                isAsync: factory.indexOf('$done') >= 0,
+                isAsync: isAsync,
                 factory: factory
             };
         };

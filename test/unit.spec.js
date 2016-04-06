@@ -217,6 +217,20 @@ describe('unit', function() {
         expect(args[0]).toBe('trueValue');
     });
 
+    it('inject local value', function() {
+        var callCount = 0;
+        var args = null;
+        var test = function(rawValue) { callCount++; args = arguments; return 'done'; };
+
+        invokeTestInstance.inject('rawValue', 'trueValue');
+        var result = invokeTestInstance(test, { 'rawValue': 'localValue' });
+
+        expect(result).toBe('done');
+        expect(callCount).toBe(1);
+        expect(args.length).toBe(1);
+        expect(args[0]).toBe('localValue');
+    });
+
     it('inject sync factory', function() {
         var callCount = 0;
         var args = null;
@@ -243,7 +257,7 @@ describe('unit', function() {
         var args = null;
         var factoryCallCount = 0;
         var test = function(asyncFactory) { callCount++; args = arguments; return 'done'; };
-        var asyncFactory = function(name0, name4, name2, $done) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
+        var asyncFactory = function($done, name0, name4, name2) { factoryCallCount++; var args = arguments; setTimeout(function () { $done(args); }, 1); };
 
         injectRawSequence(invokeTestInstance, 'name', 'value', 6);
         invokeTestInstance.injectFactory('asyncFactory', asyncFactory);
@@ -253,9 +267,9 @@ describe('unit', function() {
             expect(factoryCallCount).toBe(1);
             expect(args.length).toBe(1);
             expect(args[0].length).toBe(4);
-            expect(args[0][0]).toBe('value0');
-            expect(args[0][1]).toBe('value4');
-            expect(args[0][2]).toBe('value2');
+            expect(args[0][1]).toBe('value0');
+            expect(args[0][2]).toBe('value4');
+            expect(args[0][3]).toBe('value2');
             done();
         });
     });
