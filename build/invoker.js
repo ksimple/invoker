@@ -1,3 +1,4 @@
+"use strict";
 var invoke = (function () {
     var globalInovkeId = 0;
 
@@ -59,6 +60,12 @@ var invoke = (function () {
         };
 
         function getArgNames(func) {
+            if (func.$inject && func.$inject instanceof Array) {
+                return func.$inject.slice();
+            } else if (func.$args && func.$args instanceof Array) {
+                return func.$args.slice();
+            }
+
             var functionDefiniation = /^\s*function.*?\((.*?)\)/.exec(func.toString());
 
             if (functionDefiniation) {
@@ -77,11 +84,12 @@ var invoke = (function () {
         function invokeInternal(_this, func, args, locals, isCreateInstance, allowAsyncResolve, resultSender) {
             var resolvedCount = 0;
             var resolvedArgs = [];
+            var F;
 
             if (isCreateInstance) {
-                function F() {
+                F = function $F() {
                     func.apply(this, resolvedArgs);
-                }
+                };
 
                 F.prototype = func.prototype;
             }
@@ -93,7 +101,7 @@ var invoke = (function () {
                     resultSender.setResult(new F());
                 }
             } else {
-                function setArgs(index, value) {
+                var setArgs = function $setArgs(index, value) {
                     resolvedArgs[index] = value;
                     resolvedCount++;
 
@@ -104,13 +112,13 @@ var invoke = (function () {
                             resultSender.setResult(new F());
                         }
                     }
-                }
+                };
 
-                function resolveCallback(setArgs, index) {
+                var resolveCallback = function $resolveCallback(setArgs, index) {
                     return function (result) {
                         return setArgs(index, result);
                     };
-                }
+                };
 
                 for (var index = 0; index < args.length; index++) {
                     var name = args[index];
@@ -210,7 +218,6 @@ var invoke = (function () {
             invokeInternal(this, func, args, locals, false, allowAsyncResolve, result);
             return result;
         }
-        ;
 
         invoke.callAsync = function $invoke$callAsync() {
             var args = [];
@@ -220,7 +227,7 @@ var invoke = (function () {
             return call.call(this, args, true);
         };
 
-        invoke.createInstance = function $invoke$createInstance() {
+        invoke.instantiate = invoke.createInstance = function $invoke$createInstance() {
             var args = [];
             for (var _i = 0; _i < (arguments.length - 0); _i++) {
                 args[_i] = arguments[_i + 0];
@@ -261,7 +268,21 @@ var invoke = (function () {
             return result;
         };
 
-        invoke.resolve = function $invoke$resolve(name) {
+        invoke.invoke = function $invoke$invoke() {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            var _this;
+
+            if (args.length > 1) {
+                _this = args.splice(1, 1)[0];
+            }
+
+            invoke.apply(_this, args);
+        };
+
+        invoke.get = invoke.resolve = function $invoke$resolve(name) {
             var result;
 
             resolve(name, false).done(function (r) {
@@ -273,6 +294,16 @@ var invoke = (function () {
 
         invoke.resolveAsync = function $invoke$get(name) {
             return resolve(name, true);
+        };
+
+        invoke.has = function $invoke$has(name) {
+            var got = false;
+
+            resolve(name, false).done(function (r) {
+                got = true;
+            });
+
+            return got;
         };
 
         invoke.injectFactory = function $invoke$injectFactory(name, value) {
@@ -316,6 +347,14 @@ var invoke = (function () {
             var instance = createInvoke(this);
 
             return instance;
+        };
+
+        invoke.annotate = function $invoke$annotate() {
+            var args = [];
+            for (var _i = 0; _i < (arguments.length - 0); _i++) {
+                args[_i] = arguments[_i + 0];
+            }
+            return getFuncAndArgs(args)[1];
         };
 
         invoke.clone = function $invoke$clone() {
