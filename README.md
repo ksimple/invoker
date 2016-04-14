@@ -1,4 +1,4 @@
-Dependency injection - Invoker
+Dependency injection - Invoker [![Build Status](https://travis-ci.org/ksimple/invoker.svg?branch=master)](https://travis-ci.org/ksimple/invoker)
 ===
 Build
 ---
