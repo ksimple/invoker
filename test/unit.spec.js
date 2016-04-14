@@ -1,5 +1,7 @@
+"use strict";
+
 describe('unit', function() {
-    invokeTestInstance = null;
+    var invokeTestInstance = null;
 
     beforeEach(function() {
         invokeTestInstance = invoke.clone();
@@ -233,7 +235,7 @@ describe('unit', function() {
         expect(args[0]).toBe('trueValue');
     });
 
-    it('inject local value', function() {
+    it('inject with local value', function() {
         var callCount = 0;
         var args = null;
         var test = function(rawValue) { callCount++; args = arguments; return 'done'; };
